@@ -1,0 +1,23 @@
+[project]
+name = "fastapi-rag"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "amitgp853", email = "amitgp853.ag@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "chromadb>=1.5.9",
+    "google-genai>=2.31.0",
+    "langchain-text-splitters>=1.1.3",
+    "python-dotenv>=1.2.4",
+    "tiktoken>=0.14.0",
+]
+
+[project.scripts]
+fastapi-rag = "fastapi_rag:main"
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
