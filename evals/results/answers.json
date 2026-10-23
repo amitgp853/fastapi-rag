@@ -1,0 +1,696 @@
+{
+  "gen_model": "gemini-3.1-flash-lite",
+  "top_k": 3,
+  "answers": [
+    {
+      "id": "q01",
+      "question": "How do I return a 404 error to the client when an item isn't found?",
+      "answerable": true,
+      "answer": "To return a 404 error to the client when an item isn't found, you raise an `HTTPException` with a status code of 404. Because it is a Python exception, you `raise` it rather than `return` it.",
+      "chunks": [
+        {
+          "id": "handling-errors-3",
+          "source": "handling-errors.md",
+          "text": "If the client requests `http://example.com/items/foo` (an `item_id` `\"foo\"`), that client will receive an HTTP status code of 200, and a JSON response of:  \n```JSON\n{\n\"item\": \"The Foo Wrestlers\"\n}\n```  \nBut if the client requests `http://example.com/items/bar` (a non-existent `item_id` `\"bar\"`), that client will receive an HTTP status code of 404 (the \"not found\" error), and a JSON response of:  \n```JSON\n{\n\"detail\": \"Item not found\"\n}\n```  \n/// tip  \nWhen raising an `HTTPException`, you can pass any value that can be converted to JSON as the parameter `detail`, not only `str`.  \nYou could pass a `dict`, a `list`, etc.  \nThey are handled automatically by **FastAPI** and converted to JSON.  \n///"
+        },
+        {
+          "id": "handling-errors-0",
+          "source": "handling-errors.md",
+          "text": "There are many situations in which you need to report an error to a client that is using your API.  \nThis client could be a browser with a frontend, a code from someone else, an IoT device, etc.  \nYou could need to tell the client that:  \n* The client doesn't have enough privileges for that operation.\n* The client doesn't have access to that resource.\n* The item the client was trying to access doesn't exist.\n* etc.  \nIn these cases, you would normally return an **HTTP status code** in the range of **400** (from 400 to 499).  \nThis is similar to the 200 HTTP status codes (from 200 to 299). Those \"200\" status codes mean that somehow there was a \"success\" in the request.  \nThe status codes in the 400 range mean that there was an error from the client.  \nRemember all those **\"404 Not Found\"** errors (and jokes)?"
+        },
+        {
+          "id": "handling-errors-2",
+          "source": "handling-errors.md",
+          "text": "`HTTPException` is a normal Python exception with additional data relevant for APIs.  \nBecause it's a Python exception, you don't `return` it, you `raise` it.  \nThis also means that if you are inside a utility function that you are calling inside of your *path operation function*, and you raise the `HTTPException` from inside of that utility function, it won't run the rest of the code in the *path operation function*, it will terminate that request right away and send the HTTP error from the `HTTPException` to the client.  \nThe benefit of raising an exception over returning a value will be more evident in the section about Dependencies and Security.  \nIn this example, when the client requests an item by an ID that doesn't exist, raise an exception with a status code of `404`:"
+        }
+      ]
+    },
+    {
+      "id": "q02",
+      "question": "How do I customize the response FastAPI sends when request data fails validation?",
+      "answerable": true,
+      "answer": "To customize the response when request data fails validation, you should import `RequestValidationError` and use the `@app.exception_handler(RequestValidationError)` decorator to define your own exception handler. The handler will receive the `Request` and the exception as arguments.",
+      "chunks": [
+        {
+          "id": "handling-errors-8",
+          "source": "handling-errors.md",
+          "text": "When a request contains invalid data, **FastAPI** internally raises a `RequestValidationError`.  \nAnd it also includes a default exception handler for it.  \nTo override it, import the `RequestValidationError` and use it with `@app.exception_handler(RequestValidationError)` to decorate the exception handler.  \nThe exception handler will receive a `Request` and the exception.  \nNow, if you go to `/items/foo`, instead of getting the default JSON error with:  \n```JSON\n{\n\"detail\": [\n{\n\"loc\": [\n\"path\",\n\"item_id\"\n],\n\"msg\": \"value is not a valid integer\",\n\"type\": \"type_error.integer\"\n}\n]\n}\n```  \nyou will get a text version, with:  \n```\nValidation errors:\nField: ('path', 'item_id'), Error: Input should be a valid integer, unable to parse string as an integer\n```"
+        },
+        {
+          "id": "handling-errors-7",
+          "source": "handling-errors.md",
+          "text": "**FastAPI** has some default exception handlers.  \nThese handlers are in charge of returning the default JSON responses when you `raise` an `HTTPException` and when the request has invalid data.  \nYou can override these exception handlers with your own."
+        },
+        {
+          "id": "handling-errors-9",
+          "source": "handling-errors.md",
+          "text": "The same way, you can override the `HTTPException` handler.  \nFor example, you could want to return a plain text response instead of JSON for these errors:  \n/// note | Technical Details  \nYou could also use `from starlette.responses import PlainTextResponse`.  \n**FastAPI** provides the same `starlette.responses` as `fastapi.responses` just as a convenience for you, the developer. But most of the available responses come directly from Starlette.  \n///  \n/// warning  \nHave in mind that the `RequestValidationError` contains the information of the file name and line where the validation error happens so that you can show it in your logs with the relevant information if you want to.  \nBut that means that if you just convert it to a string and return that information directly, you could be leaking a bit of information about your system, that's why here the code extracts and shows each error independently.  \n///"
+        }
+      ]
+    },
+    {
+      "id": "q03",
+      "question": "Where do I set the status code for a response, and what code should a create endpoint use?",
+      "answerable": true,
+      "answer": "You set the status code using the `status_code` parameter in the decorator method (e.g., `@app.get()`, `@app.post()`, etc.) of the path operation.\n\nFor a create endpoint, the status code `201` (\"Created\") is commonly used.",
+      "chunks": [
+        {
+          "id": "response-status-code-5",
+          "source": "response-status-code.md",
+          "text": "Later, in the [Advanced User Guide](../advanced/response-change-status-code.md), you will see how to return a different status code than the default you are declaring here."
+        },
+        {
+          "id": "response-status-code-2",
+          "source": "response-status-code.md",
+          "text": "/// note  \nIf you already know what HTTP status codes are, skip to the next section.  \n///  \nIn HTTP, you send a numeric status code of 3 digits as part of the response.  \nThese status codes have an associated name to help recognize them, but the important part is the number.  \nIn short:  \n* `100 - 199` are for \"Information\". You rarely use them directly.  Responses with these status codes cannot have a body.\n* **`200 - 299`** are for \"Successful\" responses. These are the ones you would use the most.\n* `200` is the default status code, which means everything was \"OK\".\n* Another example would be `201`, \"Created\". It is commonly used after creating a new record in the database.\n* A special case is `204`, \"No Content\".  This response is used when there is no content to return to the client, and so the response must not have a body."
+        },
+        {
+          "id": "response-status-code-0",
+          "source": "response-status-code.md",
+          "text": "The same way you can specify a response model, you can also declare the HTTP status code used for the response with the parameter `status_code` in any of the *path operations*:  \n* `@app.get()`\n* `@app.post()`\n* `@app.put()`\n* `@app.delete()`\n* etc.  \n/// note  \nNotice that `status_code` is a parameter of the \"decorator\" method (`get`, `post`, etc). Not of your *path operation function*, like all the parameters and body.  \n///  \nThe `status_code` parameter receives a number with the HTTP status code.  \n/// note  \n`status_code` can alternatively also receive an `IntEnum`, such as Python's [`http.HTTPStatus`](https://docs.python.org/3/library/http.html#http.HTTPStatus).  \n///  \nIt will:  \n* Return that status code in the response.\n* Document it as such in the OpenAPI schema (and so, in the user interfaces):  \n<img src=\"/img/tutorial/response-status-code/image01.png\">  \n/// note"
+        }
+      ]
+    },
+    {
+      "id": "q04",
+      "question": "My /users/me route is being matched by /users/{user_id}. How do I fix it?",
+      "answerable": true,
+      "answer": "Because *path operations* are evaluated in order, you need to make sure that the path for `/users/me` is declared before the one for `/users/{user_id}`.",
+      "chunks": [
+        {
+          "id": "path-params-8",
+          "source": "path-params.md",
+          "text": "When creating *path operations*, you can find situations where you have a fixed path.  \nLike `/users/me`, let's say that it's to get data about the current user.  \nAnd then you can also have a path `/users/{user_id}` to get data about a specific user by some user ID.  \nBecause *path operations* are evaluated in order, you need to make sure that the path for `/users/me` is declared before the one for `/users/{user_id}`:  \nOtherwise, the path for `/users/{user_id}` would match also for `/users/me`, \"thinking\" that it's receiving a parameter `user_id` with a value of `\"me\"`.  \nSimilarly, you cannot redefine a path operation:  \nThe first one will always be used since the path matches first."
+        },
+        {
+          "id": "security__simple-oauth2-14",
+          "source": "security/simple-oauth2.md",
+          "text": "Now use the operation `GET` with the path `/users/me`.  \nYou will get your user's data, like:  \n```JSON\n{\n\"username\": \"johndoe\",\n\"email\": \"johndoe@example.com\",\n\"full_name\": \"John Doe\",\n\"disabled\": false,\n\"hashed_password\": \"fakehashedsecret\"\n}\n```  \n<img src=\"/img/tutorial/security/image06.png\">  \nIf you click the lock icon and logout, and then try the same operation again, you will get an HTTP 401 error of:  \n```JSON\n{\n\"detail\": \"Not authenticated\"\n}\n```"
+        },
+        {
+          "id": "frontend-3",
+          "source": "frontend.md",
+          "text": "///  \nThis is what you would want with many frontend apps that use client-side routing, for example, React with TanStack Router, Vue, Angular, SvelteKit, or Solid."
+        }
+      ]
+    },
+    {
+      "id": "q05",
+      "question": "How can I restrict a path parameter to a fixed set of allowed values?",
+      "answerable": true,
+      "answer": "You can use a standard Python `Enum` to restrict a path parameter to a fixed set of allowed values.",
+      "chunks": [
+        {
+          "id": "path-params-9",
+          "source": "path-params.md",
+          "text": "If you have a *path operation* that receives a *path parameter*, but you want the possible valid *path parameter* values to be predefined, you can use a standard Python <abbr title=\"Enumeration\">`Enum`</abbr>."
+        },
+        {
+          "id": "path-params-11",
+          "source": "path-params.md",
+          "text": "Then create a *path parameter* with a type annotation using the enum class you created (`ModelName`):"
+        },
+        {
+          "id": "path-params-12",
+          "source": "path-params.md",
+          "text": "Because the available values for the *path parameter* are predefined, the interactive docs can show them nicely:  \n<img src=\"/img/tutorial/path-params/image03.png\">"
+        }
+      ]
+    },
+    {
+      "id": "q06",
+      "question": "How do I declare a path parameter that itself contains a file path with slashes?",
+      "answerable": true,
+      "answer": "You can declare a path parameter containing a path by using an option from Starlette in the path declaration:\n\n```\n/files/{file_path:path}\n```\n\nIn this case, the name of the parameter is `file_path`, and the `:path` tells it that the parameter should match any path.",
+      "chunks": [
+        {
+          "id": "path-params-16",
+          "source": "path-params.md",
+          "text": "Using an option directly from Starlette you can declare a *path parameter* containing a *path* using a URL like:  \n```\n/files/{file_path:path}\n```  \nIn this case, the name of the parameter is `file_path`, and the last part, `:path`, tells it that the parameter should match any *path*.  \nSo, you can use it with:  \n/// tip  \nYou might need the parameter to contain `/home/johndoe/myfile.txt`, with a leading slash (`/`).  \nIn that case, the URL would be: `/files//home/johndoe/myfile.txt`, with a double slash (`//`) between `files` and `home`.  \n///"
+        },
+        {
+          "id": "path-params-14",
+          "source": "path-params.md",
+          "text": "Let's say you have a *path operation* with a path `/files/{file_path}`.  \nBut you need `file_path` itself to contain a *path*, like `home/johndoe/myfile.txt`.  \nSo, the URL for that file would be something like: `/files/home/johndoe/myfile.txt`."
+        },
+        {
+          "id": "path-params-15",
+          "source": "path-params.md",
+          "text": "OpenAPI doesn't support a way to declare a *path parameter* to contain a *path* inside, as that could lead to scenarios that are difficult to test and define.  \nNevertheless, you can still do it in **FastAPI**, using one of the internal tools from Starlette.  \nAnd the docs would still work, although not adding any documentation telling that the parameter should contain a path."
+        }
+      ]
+    },
+    {
+      "id": "q07",
+      "question": "How do I limit a query string parameter to at most 50 characters?",
+      "answerable": true,
+      "answer": "To limit a query string parameter to at most 50 characters, you use `Annotated` with `Query` inside it, setting the `max_length` parameter to `50`. \n\nExample: `Annotated[str, Query(max_length=50)]`",
+      "chunks": [
+        {
+          "id": "query-params-str-validations-1",
+          "source": "query-params-str-validations.md",
+          "text": "We are going to enforce that even though `q` is optional, whenever it is provided, **its length doesn't exceed 50 characters**."
+        },
+        {
+          "id": "query-params-str-validations-10",
+          "source": "query-params-str-validations.md",
+          "text": "You can also add a parameter `min_length`:"
+        },
+        {
+          "id": "query-params-str-validations-4",
+          "source": "query-params-str-validations.md",
+          "text": "Now that we have this `Annotated` where we can put more information (in this case some additional validation), add `Query` inside of `Annotated`, and set the parameter `max_length` to `50`:  \nNotice that the default value is still `None`, so the parameter is still optional.  \nBut now, having `Query(max_length=50)` inside of `Annotated`, we are telling FastAPI that we want it to have **additional validation** for this value, we want it to have maximum 50 characters. \ud83d\ude0e  \n/// tip  \nHere we are using `Query()` because this is a **query parameter**. Later we will see others like `Path()`, `Body()`, `Header()`, and `Cookie()`, that also accept the same arguments as `Query()`.  \n///  \nFastAPI will now:  \n* **Validate** the data making sure that the max length is 50 characters\n* Show a **clear error** for the client when the data is not valid\n* **Document** the parameter in the OpenAPI schema *path operation* (so it will show up in the **automatic docs UI**)"
+        }
+      ]
+    },
+    {
+      "id": "q08",
+      "question": "A client sends a query parameter named item-query, which isn't a valid Python variable name. How do I accept it?",
+      "answerable": true,
+      "answer": "You can declare an `alias`, and that alias is what will be used to find the parameter value.",
+      "chunks": [
+        {
+          "id": "query-params-str-validations-18",
+          "source": "query-params-str-validations.md",
+          "text": "Imagine that you want the parameter to be `item-query`.  \nLike in:  \n```\nhttp://127.0.0.1:8000/items/?item-query=foobaritems\n```  \nBut `item-query` is not a valid Python variable name.  \nThe closest would be `item_query`.  \nBut you still need it to be exactly `item-query`...  \nThen you can declare an `alias`, and that alias is what will be used to find the parameter value:"
+        },
+        {
+          "id": "query-params-0",
+          "source": "query-params.md",
+          "text": "When you declare other function parameters that are not part of the path parameters, they are automatically interpreted as \"query\" parameters.  \nThe query is the set of key-value pairs that go after the `?` in a URL, separated by `&` characters.  \nFor example, in the URL:  \n```\nhttp://127.0.0.1:8000/items/?skip=0&limit=10\n```  \n...the query parameters are:  \n* `skip`: with a value of `0`\n* `limit`: with a value of `10`  \nAs they are part of the URL, they are \"naturally\" strings.  \nBut when you declare them with Python types (in the example above, as `int`), they are converted to that type and validated against it.  \nAll the same processes that apply to path parameters also apply to query parameters:  \n* Editor support (obviously)\n* Data <dfn title=\"converting the string that comes from an HTTP request into Python data\">\"parsing\"</dfn>\n* Data validation\n* Automatic documentation"
+        },
+        {
+          "id": "path-params-numeric-validations-5",
+          "source": "path-params-numeric-validations.md",
+          "text": "/// tip  \nThis is probably not as important or necessary if you use `Annotated`.  \n///  \nHere's a **small trick** that can be handy, but you won't need it often.  \nIf you want to:  \n* declare the `q` query parameter without a `Query` nor any default value\n* declare the path parameter `item_id` using `Path`\n* have them in a different order\n* not use `Annotated`  \n...Python has a little special syntax for that.  \nPass `*`, as the first parameter of the function.  \nPython won't do anything with that `*`, but it will know that all the following parameters should be called as keyword arguments (key-value pairs), also known as <abbr title=\"From: K-ey W-ord Arg-uments\"><code>kwargs</code></abbr>. Even if they don't have a default value."
+        }
+      ]
+    },
+    {
+      "id": "q09",
+      "question": "How do I require a path parameter item_id to be at least 1?",
+      "answerable": true,
+      "answer": "You can require `item_id` to be at least 1 by using `Path` with `ge=1`.",
+      "chunks": [
+        {
+          "id": "path-params-numeric-validations-7",
+          "source": "path-params-numeric-validations.md",
+          "text": "With `Query` and `Path` (and others you'll see later) you can declare number constraints.  \nHere, with `ge=1`, `item_id` will need to be an integer number \"`g`reater than or `e`qual\" to `1`."
+        },
+        {
+          "id": "path-params-1",
+          "source": "path-params.md",
+          "text": "You can declare the type of a path parameter in the function, using standard Python type annotations:  \nIn this case, `item_id` is declared to be an `int`.  \n/// tip  \nThis will give you editor support inside of your function, with error checks, completion, etc.  \n///"
+        },
+        {
+          "id": "path-params-3",
+          "source": "path-params.md",
+          "text": "But if you go to the browser at [http://127.0.0.1:8000/items/foo](http://127.0.0.1:8000/items/foo), you will see a nice HTTP error of:  \n```JSON\n{\n\"detail\": [\n{\n\"type\": \"int_parsing\",\n\"loc\": [\n\"path\",\n\"item_id\"\n],\n\"msg\": \"Input should be a valid integer, unable to parse string as an integer\",\n\"input\": \"foo\"\n}\n]\n}\n```  \nbecause the path parameter `item_id` had a value of `\"foo\"`, which is not an `int`.  \nThe same error would appear if you provided a `float` instead of an `int`, as in: [http://127.0.0.1:8000/items/4.2](http://127.0.0.1:8000/items/4.2)  \n/// tip  \nSo, with the same Python type declaration, **FastAPI** gives you data validation.  \nNotice that the error also clearly states exactly the point where the validation didn't pass."
+        }
+      ]
+    },
+    {
+      "id": "q10",
+      "question": "Why does FastAPI convert underscores in header parameter names, and how do I turn that off?",
+      "answerable": true,
+      "answer": "FastAPI converts underscores to hyphens because most standard HTTP headers are separated by a hyphen, but variables with hyphens are invalid in Python. By converting underscores to hyphens, you can use standard Python snake_case for your variables while FastAPI handles the extraction and documentation of the headers.\n\nTo disable this automatic conversion, you can set the `convert_underscores` parameter of `Header` to `False`. If you are using Pydantic models for header parameters, you can also disable it there. \n\nNote: Before setting `convert_underscores` to `False`, bear in mind that some HTTP proxies and servers disallow the usage of headers with underscores.",
+      "chunks": [
+        {
+          "id": "header-param-models-4",
+          "source": "header-param-models.md",
+          "text": "The same way as with regular header parameters, when you have underscore characters in the parameter names, they are **automatically converted to hyphens**.  \nFor example, if you have a header parameter `save_data` in the code, the expected HTTP header will be `save-data`, and it will show up like that in the docs.  \nIf for some reason you need to disable this automatic conversion, you can do it as well for Pydantic models for header parameters.  \n/// warning  \nBefore setting `convert_underscores` to `False`, bear in mind that some HTTP proxies and servers disallow the usage of headers with underscores.  \n///"
+        },
+        {
+          "id": "header-params-3",
+          "source": "header-params.md",
+          "text": "`Header` has a little extra functionality on top of what `Path`, `Query` and `Cookie` provide.  \nMost of the standard headers are separated by a \"hyphen\" character, also known as the \"minus symbol\" (`-`).  \nBut a variable like `user-agent` is invalid in Python.  \nSo, by default, `Header` will convert the parameter names characters from underscore (`_`) to hyphen (`-`) to extract and document the headers.  \nAlso, HTTP headers are case-insensitive, so, you can declare them with standard Python style (also known as \"snake_case\").  \nSo, you can use `user_agent` as you normally would in Python code, instead of needing to capitalize the first letters as `User_Agent` or something similar.  \nIf for some reason you need to disable automatic conversion of underscores to hyphens, set the parameter `convert_underscores` of `Header` to `False`:  \n/// warning  \nBefore setting `convert_underscores` to `False`, bear in mind that some HTTP proxies and servers disallow the usage of headers with underscores.  \n///"
+        },
+        {
+          "id": "header-params-5",
+          "source": "header-params.md",
+          "text": "Declare headers with `Header`, using the same common pattern as `Query`, `Path` and `Cookie`.  \nAnd don't worry about underscores in your variables, **FastAPI** will take care of converting them."
+        }
+      ]
+    },
+    {
+      "id": "q11",
+      "question": "Why use UploadFile instead of bytes for file uploads?",
+      "answerable": true,
+      "answer": "Using `UploadFile` has several advantages over `bytes`:\n\n* You don't have to use `File()` in the default value of the parameter.\n* It uses a \"spooled\" file:\n    * A file stored in memory up to a maximum size limit, and after passing this limit it will be stored on disk.\n    * This means that it will work well for large files like images, videos, large binaries, etc. without consuming all the memory.\n* You can get metadata from the uploaded file.\n* It has a file-like `async` interface.\n* It exposes an actual Python `SpooledTemporaryFile` object that you can pass directly to other libraries that expect a file-like object.",
+      "chunks": [
+        {
+          "id": "request-files-3",
+          "source": "request-files.md",
+          "text": "Define a file parameter with a type of `UploadFile`:  \nUsing `UploadFile` has several advantages over `bytes`:  \n* You don't have to use `File()` in the default value of the parameter.\n* It uses a \"spooled\" file:\n* A file stored in memory up to a maximum size limit, and after passing this limit it will be stored on disk.\n* This means that it will work well for large files like images, videos, large binaries, etc. without consuming all the memory.\n* You can get metadata from the uploaded file.\n* It has a [file-like](https://docs.python.org/3/glossary.html#term-file-like-object) `async` interface.\n* It exposes an actual Python [`SpooledTemporaryFile`](https://docs.python.org/3/library/tempfile.html#tempfile.SpooledTemporaryFile) object that you can pass directly to other libraries that expect a file-like object."
+        },
+        {
+          "id": "request-files-4",
+          "source": "request-files.md",
+          "text": "`UploadFile` has the following attributes:  \n* `filename`: A `str` with the original file name that was uploaded (e.g. `myimage.jpg`).\n* `content_type`: A `str` with the content type (MIME type / media type) (e.g. `image/jpeg`).\n* `file`: A [`SpooledTemporaryFile`](https://docs.python.org/3/library/tempfile.html#tempfile.SpooledTemporaryFile) (a [file-like](https://docs.python.org/3/glossary.html#term-file-like-object) object). This is the actual Python file object that you can pass directly to other functions or libraries that expect a \"file-like\" object.  \n`UploadFile` has the following `async` methods. They all call the corresponding file methods underneath (using the internal `SpooledTemporaryFile`).  \n* `write(data)`: Writes `data` (`str` or `bytes`) to the file.\n* `read(size)`: Reads `size` (`int`) bytes/characters of the file.\n* `seek(offset)`: Goes to the byte position `offset` (`int`) in the file."
+        },
+        {
+          "id": "request-files-13",
+          "source": "request-files.md",
+          "text": "Use `File`, `bytes`, and `UploadFile` to declare files to be uploaded in the request, sent as form data."
+        }
+      ]
+    },
+    {
+      "id": "q12",
+      "question": "I have a single Pydantic body parameter but want the JSON to be nested under a key like {\"item\": {...}}. How?",
+      "answerable": true,
+      "answer": "To have a single Pydantic body parameter nested under a key, you can use the special `Body` parameter `embed=True`:\n\n```Python\nitem: Annotated[Item, Body(embed=True)]\n```",
+      "chunks": [
+        {
+          "id": "body-multiple-params-6",
+          "source": "body-multiple-params.md",
+          "text": "Let's say you only have a single `item` body parameter from a Pydantic model `Item`.  \nBy default, **FastAPI** will then expect its body directly.  \nBut if you want it to expect a JSON with a key `item` and inside of it the model contents, as it does when you declare extra body parameters, you can use the special `Body` parameter `embed`:  \n```Python\nitem: Annotated[Item, Body(embed=True)]\n```  \nas in:  \nIn this case **FastAPI** will expect a body like:  \n```JSON hl_lines=\"2\"\n{\n\"item\": {\n\"name\": \"Foo\",\n\"description\": \"The pretender\",\n\"price\": 42.0,\n\"tax\": 3.2\n}\n}\n```  \ninstead of:  \n```JSON\n{\n\"name\": \"Foo\",\n\"description\": \"The pretender\",\n\"price\": 42.0,\n\"tax\": 3.2\n}\n```"
+        },
+        {
+          "id": "body-multiple-params-3",
+          "source": "body-multiple-params.md",
+          "text": "\"username\": \"dave\",\n\"full_name\": \"Dave Grohl\"\n}\n}\n```  \n/// note  \nNotice that even though the `item` was declared the same way as before, it is now expected to be inside of the body with a key `item`.  \n///  \n**FastAPI** will do the automatic conversion from the request, so that the parameter `item` receives its specific content and the same for `user`.  \nIt will perform the validation of the compound data, and will document it like that for the OpenAPI schema and automatic docs."
+        },
+        {
+          "id": "body-multiple-params-2",
+          "source": "body-multiple-params.md",
+          "text": "In the previous example, the *path operations* would expect a JSON body with the attributes of an `Item`, like:  \n```JSON\n{\n\"name\": \"Foo\",\n\"description\": \"The pretender\",\n\"price\": 42.0,\n\"tax\": 3.2\n}\n```  \nBut you can also declare multiple body parameters, e.g. `item` and `user`:  \nIn this case, **FastAPI** will notice that there is more than one body parameter in the function (there are two parameters that are Pydantic models).  \nSo, it will then use the parameter names as keys (field names) in the body, and expect a body like:  \n```JSON\n{\n\"item\": {\n\"name\": \"Foo\",\n\"description\": \"The pretender\",\n\"price\": 42.0,\n\"tax\": 3.2\n},\n\"user\": {\n\"username\": \"dave\",\n\"full_name\": \"Dave Grohl\"\n}\n}\n```  \n/// note"
+        }
+      ]
+    },
+    {
+      "id": "q13",
+      "question": "How do I implement a partial update so fields the client didn't send aren't overwritten with defaults?",
+      "answerable": true,
+      "answer": "To implement a partial update so fields the client didn't send aren't overwritten with defaults, follow these steps:\n\n* (Optionally) use `PATCH` instead of `PUT`.\n* Retrieve the stored data.\n* Put that data in a Pydantic model.\n* Generate a `dict` without default values from the input model using `exclude_unset=True` (e.g., `item.model_dump(exclude_unset=True)`). This ensures you only use the data that was actually set by the user.\n* Create a copy of the stored model, updating its attributes with the received partial updates (using the `update` parameter).\n* Convert the copied model to something that can be stored in your DB (for example, using the `jsonable_encoder`).\n* Save the data to your DB.\n* Return the updated model.",
+      "chunks": [
+        {
+          "id": "body-updates-3",
+          "source": "body-updates.md",
+          "text": "If you want to receive partial updates, it's very useful to use the parameter `exclude_unset` in Pydantic's model's `.model_dump()`.  \nLike `item.model_dump(exclude_unset=True)`.  \nThat would generate a `dict` with only the data that was set when creating the `item` model, excluding default values.  \nThen you can use this to generate a `dict` with only the data that was set (sent in the request), omitting default values:"
+        },
+        {
+          "id": "body-updates-1",
+          "source": "body-updates.md",
+          "text": "That means that if you want to update the item `bar` using `PUT` with a body containing:  \n```Python\n{\n\"name\": \"Barz\",\n\"price\": 3,\n\"description\": None,\n}\n```  \nbecause it doesn't include the already stored attribute `\"tax\": 20.2`, the input model would take the default value of `\"tax\": 10.5`.  \nAnd the data would be saved with that \"new\" `tax` of `10.5`."
+        },
+        {
+          "id": "body-updates-5",
+          "source": "body-updates.md",
+          "text": "In summary, to apply partial updates you would:  \n* (Optionally) use `PATCH` instead of `PUT`.\n* Retrieve the stored data.\n* Put that data in a Pydantic model.\n* Generate a `dict` without default values from the input model (using `exclude_unset`).\n* This way you can update only the values actually set by the user, instead of overriding values already stored with default values in your model.\n* Create a copy of the stored model, updating its attributes with the received partial updates (using the `update` parameter).\n* Convert the copied model to something that can be stored in your DB (for example, using the `jsonable_encoder`).\n* This is comparable to using the model's `.model_dump()` method again, but it makes sure (and converts) the values to data types that can be converted to JSON, for example, `datetime` to `str`.\n* Save the data to your DB.\n* Return the updated model.  \n/// tip  \nYou can actually use this same technique with an HTTP `PUT` operation.  \nBut the example here uses `PATCH` because it was created for these use cases."
+        }
+      ]
+    },
+    {
+      "id": "q14",
+      "question": "How do I convert a Pydantic model containing a datetime into something I can store in a JSON-only database?",
+      "answerable": true,
+      "answer": "You can use the `jsonable_encoder()` function provided by FastAPI. It receives an object, such as a Pydantic model, and returns a JSON-compatible version (a Python standard data structure like a `dict`) where the Pydantic model is converted to a `dict` and the `datetime` object is converted to a `str`.",
+      "chunks": [
+        {
+          "id": "encoder-1",
+          "source": "encoder.md",
+          "text": "Let's imagine that you have a database `fake_db` that only receives JSON compatible data.  \nFor example, it doesn't receive `datetime` objects, as those are not compatible with JSON.  \nSo, a `datetime` object would have to be converted to a `str` containing the data in [ISO format](https://en.wikipedia.org/wiki/ISO_8601).  \nThe same way, this database wouldn't receive a Pydantic model (an object with attributes), only a `dict`.  \nYou can use `jsonable_encoder` for that.  \nIt receives an object, like a Pydantic model, and returns a JSON compatible version:  \nIn this example, it would convert the Pydantic model to a `dict`, and the `datetime` to a `str`.  \nThe result of calling it is something that can be encoded with the Python standard [`json.dumps()`](https://docs.python.org/3/library/json.html#json.dumps)."
+        },
+        {
+          "id": "encoder-0",
+          "source": "encoder.md",
+          "text": "There are some cases where you might need to convert a data type (like a Pydantic model) to something compatible with JSON (like a `dict`, `list`, etc).  \nFor example, if you need to store it in a database.  \nFor that, **FastAPI** provides a `jsonable_encoder()` function."
+        },
+        {
+          "id": "encoder-2",
+          "source": "encoder.md",
+          "text": "It doesn't return a large `str` containing the data in JSON format (as a string). It returns a Python standard data structure (e.g. a `dict`) with values and sub-values that are all compatible with JSON.  \n/// note  \n`jsonable_encoder` is actually used by **FastAPI** internally to convert data. But it is useful in many other scenarios.  \n///"
+        }
+      ]
+    },
+    {
+      "id": "q15",
+      "question": "How do I send an email after returning a response, without making the client wait?",
+      "answerable": true,
+      "answer": "You can define background tasks to be run after returning a response. Inside of your path operation function, pass your task function to the background tasks object with the method `.add_task()`. \n\n`.add_task()` receives as arguments:\n* A task function to be run in the background.\n* Any sequence of arguments that should be passed to the task function in order.\n* Any keyword arguments that should be passed to the task function.",
+      "chunks": [
+        {
+          "id": "background-tasks-0",
+          "source": "background-tasks.md",
+          "text": "You can define background tasks to be run *after* returning a response.  \nThis is useful for operations that need to happen after a request, but that the client doesn't really have to be waiting for the operation to complete before receiving the response.  \nThis includes, for example:  \n* Email notifications sent after performing an action:\n* As connecting to an email server and sending an email tends to be \"slow\" (several seconds), you can return the response right away and send the email notification in the background.\n* Processing data:\n* For example, let's say you receive a file that must go through a slow process, you can return a response of \"Accepted\" (HTTP 202) and process the file in the background."
+        },
+        {
+          "id": "dependencies__dependencies-with-yield-9",
+          "source": "dependencies/dependencies-with-yield.md",
+          "text": "operation ->> client: Return response to client\nNote over client,operation: Response is already sent, can't change it anymore\nopt Tasks\noperation -->> tasks: Send background tasks\nend\nopt Raise other exception\ntasks -->> tasks: Handle exceptions in the background task code\nend\n```  \n/// note  \nOnly **one response** will be sent to the client. It might be one of the error responses or it will be the response from the *path operation*.  \nAfter one of those responses is sent, no other response can be sent.  \n///  \n/// tip  \nIf you raise any exception in the code from the *path operation function*, it will be passed to the dependencies with yield, including `HTTPException`. In most cases you will want to re-raise that same exception or a new one from the dependency with `yield` to make sure it's properly handled.  \n///"
+        },
+        {
+          "id": "background-tasks-3",
+          "source": "background-tasks.md",
+          "text": "Inside of your *path operation function*, pass your task function to the *background tasks* object with the method `.add_task()`:  \n`.add_task()` receives as arguments:  \n* A task function to be run in the background (`write_notification`).\n* Any sequence of arguments that should be passed to the task function in order (`email`).\n* Any keyword arguments that should be passed to the task function (`message=\"some notification\"`)."
+        }
+      ]
+    },
+    {
+      "id": "q16",
+      "question": "What are the defaults of CORSMiddleware for allowed methods and max_age?",
+      "answerable": true,
+      "answer": "The default for `allow_methods` is `['GET']`. The default for `max_age` is `600`.",
+      "chunks": [
+        {
+          "id": "cors-6",
+          "source": "cors.md",
+          "text": "* `allow_credentials` - Indicate that cookies should be supported for cross-origin requests. Defaults to `False`.  \nNone of `allow_origins`, `allow_methods` and `allow_headers` can be set to `['*']` if `allow_credentials` is set to `True`. All of them must be [explicitly specified](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#credentialed_requests_and_wildcards).  \n* `expose_headers` - Indicate any response headers that should be made accessible to the browser. Defaults to `[]`.\n* `max_age` - Sets a maximum time in seconds for browsers to cache CORS responses. Defaults to `600`.  \nThe middleware responds to two particular types of HTTP request..."
+        },
+        {
+          "id": "cors-5",
+          "source": "cors.md",
+          "text": "* `allow_origin_regex` - A regex string to match against origins that should be permitted to make cross-origin requests. e.g. `'https://.*\\.example\\.org'`.\n* `allow_methods` - A list of HTTP methods that should be allowed for cross-origin requests. Defaults to `['GET']`. You can use `['*']` to allow all standard methods.\n* `allow_headers` - A list of HTTP request headers that should be supported for cross-origin requests. Defaults to `[]`. You can use `['*']` to allow all headers. The `Accept`, `Accept-Language`, `Content-Language` and `Content-Type` headers are always allowed for [simple CORS requests](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#simple_requests).\n* `allow_credentials` - Indicate that cookies should be supported for cross-origin requests. Defaults to `False`."
+        },
+        {
+          "id": "cors-4",
+          "source": "cors.md",
+          "text": "You can configure it in your **FastAPI** application using the `CORSMiddleware`.  \n* Import `CORSMiddleware`.\n* Create a list of allowed origins (as strings).\n* Add it as a \"middleware\" to your **FastAPI** application.  \nYou can also specify whether your backend allows:  \n* Credentials (Authorization headers, Cookies, etc).\n* Specific HTTP methods (`POST`, `PUT`) or all of them with the wildcard `\"*\"`.\n* Specific HTTP headers or all of them with the wildcard `\"*\"`.  \nThe default parameters used by the `CORSMiddleware` implementation are restrictive by default, so you'll need to explicitly enable particular origins, methods, or headers, in order for browsers to be permitted to use them in a Cross-Domain context.  \nThe following arguments are supported:  \n* `allow_origins` - A list of origins that should be permitted to make cross-origin requests. E.g. `['https://example.org', 'https://www.example.org']`. You can use `['*']` to allow any origin."
+        }
+      ]
+    },
+    {
+      "id": "q17",
+      "question": "How can I add a header showing how long each request took to process?",
+      "answerable": true,
+      "answer": "You can add a custom header `X-Process-Time` containing the time in seconds that it took to process the request and generate a response by adding code to be run with the `request` before any *path operation* receives it, and after the `response` is generated, before returning it. It is recommended to use `time.perf_counter()` for this.",
+      "chunks": [
+        {
+          "id": "middleware-3",
+          "source": "middleware.md",
+          "text": "You can add code to be run with the `request`,  before any *path operation* receives it.  \nAnd also after the `response` is generated, before returning it.  \nFor example, you could add a custom header `X-Process-Time` containing the time in seconds that it took to process the request and generate a response:  \n/// tip  \nHere we use [`time.perf_counter()`](https://docs.python.org/3/library/time.html#time.perf_counter) instead of `time.time()` because it can be more precise for these use cases. \ud83e\udd13  \n///"
+        },
+        {
+          "id": "security__simple-oauth2-11",
+          "source": "security/simple-oauth2.md",
+          "text": "You can actually skip that extra header and it would still work.  \nBut it's provided here to be compliant with the specifications.  \nAlso, there might be tools that expect and use it (now or in the future) and that might be useful for you or your users, now or in the future.  \nThat's the benefit of standards...  \n///"
+        },
+        {
+          "id": "handling-errors-4",
+          "source": "handling-errors.md",
+          "text": "There are some situations where it's useful to be able to add custom headers to the HTTP error. For example, for some types of security.  \nYou probably won't need to use it directly in your code.  \nBut in case you needed it for an advanced scenario, you can add custom headers:"
+        }
+      ]
+    },
+    {
+      "id": "q18",
+      "question": "How do I open a database session in a dependency and make sure it gets closed after the request?",
+      "answerable": true,
+      "answer": "To open a database session in a dependency and ensure it is closed after the request, you create a dependency with `yield`. The code prior to the `yield` statement creates the session, and the code following the `yield` statement is executed after the response to close it.\n\nBy default, dependencies with `yield` execute their exit code after the response is sent to the client (using the `\"request\"` scope). This ensures that a single session is used per request.",
+      "chunks": [
+        {
+          "id": "dependencies__dependencies-with-yield-1",
+          "source": "dependencies/dependencies-with-yield.md",
+          "text": "For example, you could use this to create a database session and close it after finishing.  \nOnly the code prior to and including the `yield` statement is executed before creating a response:  \nThe yielded value is what is injected into *path operations* and other dependencies:  \nThe code following the `yield` statement is executed after the response:  \n/// tip  \nYou can use `async` or regular functions.  \n**FastAPI** will do the right thing with each, the same as with normal dependencies.  \n///"
+        },
+        {
+          "id": "sql-databases-8",
+          "source": "sql-databases.md",
+          "text": "A **`Session`** is what stores the **objects in memory** and keeps track of any changes needed in the data, then it **uses the `engine`** to communicate with the database.  \nWe will create a FastAPI **dependency** with `yield` that will provide a new `Session` for each request. This is what ensures that we use a single session per request. \ud83e\udd13  \nThen we create an `Annotated` dependency `SessionDep` to simplify the rest of the code that will use this dependency."
+        },
+        {
+          "id": "dependencies__dependencies-with-yield-10",
+          "source": "dependencies/dependencies-with-yield.md",
+          "text": "Normally the exit code of dependencies with `yield` is executed **after the response** is sent to the client.  \nBut if you know that you won't need to use the dependency after returning from the *path operation function*, you can use `Depends(scope=\"function\")` to tell FastAPI that it should close the dependency after the *path operation function* returns, but **before** the **response is sent**.  \n`Depends()` receives a `scope` parameter that can be:  \n* `\"function\"`: start the dependency before the *path operation function* that handles the request, end the dependency after the *path operation function* ends, but **before** the response is sent back to the client. So, the dependency function will be executed **around** the *path operation **function***.\n* `\"request\"`: start the dependency before the *path operation function* that handles the request (similar to when using `\"function\"`), but end **after** the response is sent back to the client. So, the dependency function will be executed **around** the **request** and response cycle."
+        }
+      ]
+    },
+    {
+      "id": "q19",
+      "question": "If the same dependency is used twice in one request, is it called twice? How do I force that?",
+      "answerable": true,
+      "answer": "No, FastAPI will call the sub-dependency only once per request and save the returned value in a \"cache\" to pass to all dependants.\n\nTo force the dependency to be called at every step (possibly multiple times) in the same request, you can set the parameter `use_cache=False` when using `Depends`.",
+      "chunks": [
+        {
+          "id": "dependencies__sub-dependencies-4",
+          "source": "dependencies/sub-dependencies.md",
+          "text": "If one of your dependencies is declared multiple times for the same *path operation*, for example, multiple dependencies have a common sub-dependency, **FastAPI** will know to call that sub-dependency only once per request.  \nAnd it will save the returned value in a <dfn title=\"A utility/system to store computed/generated values, to reuse them instead of computing them again.\">\"cache\"</dfn> and pass it to all the \"dependants\" that need it in that specific request, instead of calling the dependency multiple times for the same request.  \nIn an advanced scenario where you know you need the dependency to be called at every step (possibly multiple times) in the same request instead of using the \"cached\" value, you can set the parameter `use_cache=False` when using `Depends`:  \n//// tab | Python 3.10+  \n```Python hl_lines=\"2\"\nasync def needy_dependency(\nfresh_value: Annotated[str, Depends(get_value, use_cache=False)],\n):\nreturn {\"fresh_value\": fresh_value}\n```  \n////  \n//// tab | Python 3.10+ non-Annotated  \n/// tip"
+        },
+        {
+          "id": "dependencies__dependencies-in-path-operation-decorators-5",
+          "source": "dependencies/dependencies-in-path-operation-decorators.md",
+          "text": "And they can return values or not, the values won't be used.  \nSo, you can reuse a normal dependency (that returns a value) you already use somewhere else, and even though the value won't be used, the dependency will be executed:"
+        },
+        {
+          "id": "dependencies__dependencies-with-yield-4",
+          "source": "dependencies/dependencies-with-yield.md",
+          "text": "You can have any combinations of dependencies that you want.  \n**FastAPI** will make sure everything is run in the correct order.  \n/// note | Technical Details  \nThis works thanks to Python's [Context Managers](https://docs.python.org/3/library/contextlib.html).  \n**FastAPI** uses them internally to achieve this.  \n///"
+        }
+      ]
+    },
+    {
+      "id": "q20",
+      "question": "How do I split my app into multiple files and give all routes in one file a shared /items prefix and tag?",
+      "answerable": true,
+      "answer": "To split your app into multiple files and give all routes in one file a shared `/items` prefix and tag, you can add them to the `APIRouter` in that module.\n\nWhen defining the `APIRouter`, you can include the `prefix` and `tags` parameters:\n\n```python\nrouter = APIRouter(\n    prefix=\"/items\",\n    tags=[\"items\"],\n)\n```\n\nWhen using this router, the path of each *path operation* must start with `/` (e.g., `@router.get(\"/{item_id}\")`), and the `prefix` must not include a final `/`. This will apply the prefix and tags to all *path operations* included in that router.",
+      "chunks": [
+        {
+          "id": "bigger-applications-9",
+          "source": "bigger-applications.md",
+          "text": "```  \n...the prefix must not include a final `/`.  \nSo, the prefix in this case is `/items`.  \nWe can also add a list of `tags` and extra `responses` that will be applied to all the *path operations* included in this router.  \nAnd we can add a list of `dependencies` that will be added to all the *path operations* in the router and will be executed/solved for each request made to them.  \n/// tip  \nNote that, much like [dependencies in *path operation decorators*](dependencies/dependencies-in-path-operation-decorators.md), no value will be passed to your *path operation function*.  \n///  \nThe end result is that the item paths are now:  \n* `/items/`\n* `/items/{item_id}`  \n...as we intended.  \n* They will be marked with a list of tags that contain a single string `\"items\"`.\n* These \"tags\" are especially useful for the automatic interactive documentation systems (using OpenAPI).\n* All of them will include the predefined `responses`."
+        },
+        {
+          "id": "bigger-applications-8",
+          "source": "bigger-applications.md",
+          "text": "Let's say you also have the endpoints dedicated to handling \"items\" from your application in the module at `app/routers/items.py`.  \nYou have *path operations* for:  \n* `/items/`\n* `/items/{item_id}`  \nIt's all the same structure as with `app/routers/users.py`.  \nBut we want to be smarter and simplify the code a bit.  \nWe know all the *path operations* in this module have the same:  \n* Path `prefix`: `/items`.\n* `tags`: (just one tag: `items`).\n* Extra `responses`.\n* `dependencies`: they all need that `X-Token` dependency we created.  \nSo, instead of adding all that to each *path operation*, we can add it to the `APIRouter`.  \nAs the path of each *path operation* has to start with `/`, like in:  \n```Python hl_lines=\"1\"\n@router.get(\"/{item_id}\")\nasync def read_item(item_id: str): ...\n```  \n...the prefix must not include a final `/`.  \nSo, the prefix in this case is `/items`."
+        },
+        {
+          "id": "bigger-applications-26",
+          "source": "bigger-applications.md",
+          "text": "Now, run your app:  \n<div class=\"termy\">  \n```console\n$ uv run fastapi dev\n\n<span style=\"color: green;\">INFO</span>:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)\n```  \n</div>  \nAnd open the docs at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).  \nYou will see the automatic API docs, including the paths from all the submodules, using the correct paths (and prefixes) and the correct tags:  \n<img src=\"/img/tutorial/bigger-applications/image01.png\">"
+        }
+      ]
+    },
+    {
+      "id": "q21",
+      "question": "How do I write tests for my FastAPI app, and do the test functions need to be async?",
+      "answerable": true,
+      "answer": "To write tests for your FastAPI app, you use `TestClient`, which is based on `httpx`. You create a `TestClient` by passing your FastAPI application to it, create functions with names starting with `test_` (a `pytest` convention), and use standard Python `assert` statements.\n\nThe testing functions do not need to be `async def`; they should be normal `def`, and calls to the client should be normal calls without `await`. This allows you to use `pytest` directly.",
+      "chunks": [
+        {
+          "id": "testing-1",
+          "source": "testing.md",
+          "text": "/// note  \nTo use `TestClient`, first install [`httpx`](https://www.python-httpx.org).  \nAdd it to your project:  \n```console\n$ uv add httpx\n```  \n///  \nImport `TestClient`.  \nCreate a `TestClient` by passing your **FastAPI** application to it.  \nCreate functions with a name that starts with `test_` (this is a standard `pytest` convention).  \nUse the `TestClient` object the same way as you do with `httpx`.  \nWrite simple `assert` statements with the standard Python expressions that you need to check (again, standard `pytest`).  \n/// tip  \nNotice that the testing functions are normal `def`, not `async def`.  \nAnd the calls to the client are also normal calls, not using `await`.  \nThis allows you to use `pytest` directly without complications.  \n///  \n/// note | Technical Details  \nYou could also use `from starlette.testclient import TestClient`."
+        },
+        {
+          "id": "testing-0",
+          "source": "testing.md",
+          "text": "Thanks to [Starlette](https://starlette.dev/testclient/), testing **FastAPI** applications is easy and enjoyable.  \nIt is based on [HTTPX](https://www.python-httpx.org), which in turn is designed based on Requests, so it's very familiar and intuitive.  \nWith it, you can use [pytest](https://docs.pytest.org/) directly with **FastAPI**."
+        },
+        {
+          "id": "testing-3",
+          "source": "testing.md",
+          "text": "In a real application, you probably would have your tests in a different file.  \nAnd your **FastAPI** application might also be composed of several files/modules, etc."
+        }
+      ]
+    },
+    {
+      "id": "q22",
+      "question": "How should I hash user passwords and sign JWTs in the OAuth2 JWT example?",
+      "answerable": true,
+      "answer": "I don't know.",
+      "chunks": [
+        {
+          "id": "security__oauth2-jwt-0",
+          "source": "security/oauth2-jwt.md",
+          "text": "Now that we have all the security flow, let's make the application actually secure, using <abbr title=\"JSON Web Tokens\">JWT</abbr> tokens and secure password hashing.  \nThis code is something you can actually use in your application, save the password hashes in your database, etc.  \nWe are going to start from where we left in the previous chapter and increment it."
+        },
+        {
+          "id": "security__oauth2-jwt-14",
+          "source": "security/oauth2-jwt.md",
+          "text": "Run the server and go to the docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).  \nYou'll see the user interface like:  \n<img src=\"/img/tutorial/security/image07.png\">  \nAuthorize the application the same way as before.  \nUsing the credentials:  \nUsername: `johndoe`\nPassword: `secret`  \n/// tip  \nNotice that nowhere in the code is the plaintext password \"`secret`\", we only have the hashed version.  \n///  \n<img src=\"/img/tutorial/security/image08.png\">  \nCall the endpoint `/users/me/`, you will get the response as:  \n```JSON\n{\n\"username\": \"johndoe\",\n\"email\": \"johndoe@example.com\",\n\"full_name\": \"John Doe\",\n\"disabled\": false\n}\n```  \n<img src=\"/img/tutorial/security/image09.png\">"
+        },
+        {
+          "id": "security__oauth2-jwt-2",
+          "source": "security/oauth2-jwt.md",
+          "text": "After a week, the token will be expired and the user will not be authorized and will have to sign in again to get a new token. And if the user (or a third party) tried to modify the token to change the expiration, you would be able to discover it, because the signatures would not match.  \nIf you want to play with JWT tokens and see how they work, check [https://jwt.io](https://jwt.io/)."
+        }
+      ]
+    },
+    {
+      "id": "q23",
+      "question": "In the OAuth2 password flow, how does the client send credentials, and what does tokenUrl mean?",
+      "answerable": true,
+      "answer": "In the OAuth2 password flow, the client (the frontend running in the user's browser) sends the `username` and `password` to a specific URL in the API to get a token.\n\nThe `tokenUrl` parameter contains the URL that the client will use to send those credentials. It does not create the endpoint itself, but declares which URL the client should use, which is then used in OpenAPI and interactive API documentation systems. It is a relative URL (e.g., `token` is equivalent to `./token`), which ensures the application continues to work even when behind a proxy.",
+      "chunks": [
+        {
+          "id": "security__first-steps-6",
+          "source": "security/first-steps.md",
+          "text": "Now let's go back a bit and understand what all that is.  \nThe `password` \"flow\" is one of the ways (\"flows\") defined in OAuth2, to handle security and authentication.  \nOAuth2 was designed so that the backend or API could be independent of the server that authenticates the user.  \nBut in this case, the same **FastAPI** application will handle the API and the authentication.  \nSo, let's review it from that simplified point of view:  \n* The user types the `username` and `password` in the frontend, and hits `Enter`.\n* The frontend (running in the user's browser) sends that `username` and `password` to a specific URL in our API (declared with `tokenUrl=\"token\"`).\n* The API checks that `username` and `password`, and responds with a \"token\" (we haven't implemented any of this yet).\n* A \"token\" is just a string with some content that we can use later to verify this user.\n* Normally, a token is set to expire after some time.\n* So, the user will have to log in again at some point later."
+        },
+        {
+          "id": "security__first-steps-9",
+          "source": "security/first-steps.md",
+          "text": "/// tip  \nHere `tokenUrl=\"token\"` refers to a relative URL `token` that we haven't created yet. As it's a relative URL, it's equivalent to `./token`.  \nBecause we are using a relative URL, if your API was located at `https://example.com/`, then it would refer to `https://example.com/token`. But if your API was located at `https://example.com/api/v1/`, then it would refer to `https://example.com/api/v1/token`.  \nUsing a relative URL is important to make sure your application keeps working even in an advanced use case like [Behind a Proxy](../../advanced/behind-a-proxy.md).  \n///  \nThis parameter doesn't create that endpoint / *path operation*, but declares that the URL `/token` will be the one that the client should use to get the token. That information is used in OpenAPI, and then in the interactive API documentation systems.  \nWe will soon also create the actual path operation.  \n/// note  \nIf you are a very strict \"Pythonista\" you might dislike the style of the parameter name `tokenUrl` instead of `token_url`."
+        },
+        {
+          "id": "security__first-steps-8",
+          "source": "security/first-steps.md",
+          "text": "**FastAPI** provides several tools, at different levels of abstraction, to implement these security features.  \nIn this example we are going to use **OAuth2**, with the **Password** flow, using a **Bearer** token. We do that using the `OAuth2PasswordBearer` class.  \n/// note  \nA \"bearer\" token is not the only option.  \nBut it's the best one for our use case.  \nAnd it might be the best for most use cases, unless you are an OAuth2 expert and know exactly why there's another option that better suits your needs.  \nIn that case, **FastAPI** also provides you with the tools to build it.  \n///  \nWhen we create an instance of the `OAuth2PasswordBearer` class we pass in the `tokenUrl` parameter. This parameter contains the URL that the client (the frontend running in the user's browser) will use to send the `username` and `password` in order to get a token.  \n/// tip"
+        }
+      ]
+    },
+    {
+      "id": "q24",
+      "question": "How do I stream events to a browser using Server-Sent Events?",
+      "answerable": true,
+      "answer": "You can stream data to the client using Server-Sent Events (SSE), which uses the `text/event-stream` format. This format is supported natively by browsers with the `EventSource` API.",
+      "chunks": [
+        {
+          "id": "server-sent-events-0",
+          "source": "server-sent-events.md",
+          "text": "You can stream data to the client using **Server-Sent Events** (SSE).  \nThis is similar to [Stream JSON Lines](stream-json-lines.md), but uses the `text/event-stream` format, which is supported natively by browsers with the [`EventSource` API](https://developer.mozilla.org/en-US/docs/Web/API/EventSource).  \n/// note  \nAdded in FastAPI 0.135.0.  \n///"
+        },
+        {
+          "id": "server-sent-events-1",
+          "source": "server-sent-events.md",
+          "text": "SSE is a standard for streaming data from the server to the client over HTTP.  \nEach event is a small text block with \"fields\" like `data`, `event`, `id`, and `retry`, separated by blank lines.  \nIt looks like this:  \n```\ndata: {\"name\": \"Portal Gun\", \"price\": 999.99}\n\ndata: {\"name\": \"Plumbus\", \"price\": 32.99}\n\n```  \nSSE is commonly used for AI chat streaming, live notifications, logs and observability, and other cases where the server pushes updates to the client.  \n/// tip  \nIf you want to stream binary data, for example video or audio, check the advanced guide: [Stream Data](../advanced/stream-data.md).  \n///"
+        },
+        {
+          "id": "server-sent-events-8",
+          "source": "server-sent-events.md",
+          "text": "SSE works with **any HTTP method**, not just `GET`.  \nThis is useful for protocols like [MCP](https://modelcontextprotocol.io) that stream SSE over `POST`:"
+        }
+      ]
+    },
+    {
+      "id": "q25",
+      "question": "How do I reject requests that include unexpected query parameters?",
+      "answerable": true,
+      "answer": "You can use Pydantic's model configuration to `forbid` any `extra` fields. If a client tries to send extra data in the query parameters, they will receive an error response.",
+      "chunks": [
+        {
+          "id": "query-param-models-3",
+          "source": "query-param-models.md",
+          "text": "In some special use cases (probably not very common), you might want to **restrict** the query parameters that you want to receive.  \nYou can use Pydantic's model configuration to `forbid` any `extra` fields:  \nIf a client tries to send some **extra** data in the **query parameters**, they will receive an **error** response.  \nFor example, if the client tries to send a `tool` query parameter with a value of `plumbus`, like:  \n```http\nhttps://example.com/items/?limit=10&tool=plumbus\n```  \nThey will receive an **error** response telling them that the query parameter `tool` is not allowed:  \n```json\n{\n\"detail\": [\n{\n\"type\": \"extra_forbidden\",\n\"loc\": [\"query\", \"tool\"],\n\"msg\": \"Extra inputs are not permitted\",\n\"input\": \"plumbus\"\n}\n]\n}\n```"
+        },
+        {
+          "id": "query-params-0",
+          "source": "query-params.md",
+          "text": "When you declare other function parameters that are not part of the path parameters, they are automatically interpreted as \"query\" parameters.  \nThe query is the set of key-value pairs that go after the `?` in a URL, separated by `&` characters.  \nFor example, in the URL:  \n```\nhttp://127.0.0.1:8000/items/?skip=0&limit=10\n```  \n...the query parameters are:  \n* `skip`: with a value of `0`\n* `limit`: with a value of `10`  \nAs they are part of the URL, they are \"naturally\" strings.  \nBut when you declare them with Python types (in the example above, as `int`), they are converted to that type and validated against it.  \nAll the same processes that apply to path parameters also apply to query parameters:  \n* Editor support (obviously)\n* Data <dfn title=\"converting the string that comes from an HTTP request into Python data\">\"parsing\"</dfn>\n* Data validation\n* Automatic documentation"
+        },
+        {
+          "id": "query-param-models-1",
+          "source": "query-param-models.md",
+          "text": "Declare the **query parameters** that you need in a **Pydantic model**, and then declare the parameter as `Query`:  \n**FastAPI** will **extract** the data for **each field** from the **query parameters** in the request and give you the Pydantic model you defined."
+        }
+      ]
+    },
+    {
+      "id": "q26",
+      "question": "How do I accept WebSocket connections in FastAPI?",
+      "answerable": false,
+      "answer": "I don't know.",
+      "chunks": [
+        {
+          "id": "stream-json-lines-8",
+          "source": "stream-json-lines.md",
+          "text": "FastAPI also has first-class support for Server-Sent Events (SSE), which are quite similar but with a couple of extra details. You can learn about them in the next chapter: [Server-Sent Events (SSE)](server-sent-events.md). \ud83e\udd13"
+        },
+        {
+          "id": "security__simple-oauth2-3",
+          "source": "security/simple-oauth2.md",
+          "text": "Now let's use the utilities provided by **FastAPI** to handle this."
+        },
+        {
+          "id": "server-sent-events-9",
+          "source": "server-sent-events.md",
+          "text": "FastAPI implements some SSE best practices out of the box.  \n* Send a **\"keep alive\" `ping` comment** every 15 seconds when there hasn't been any message, to prevent some proxies from closing the connection, as suggested in the [HTML specification: Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html#authoring-notes).\n* Set the `Cache-Control: no-cache` header to **prevent caching** of the stream.\n* Set a special header `X-Accel-Buffering: no` to **prevent buffering** in some proxies like Nginx.  \nYou don't have to do anything about it, it works out of the box. \ud83e\udd13"
+        }
+      ]
+    },
+    {
+      "id": "q27",
+      "question": "How do I deploy my FastAPI app in a Docker container?",
+      "answerable": false,
+      "answer": "I don't know.",
+      "chunks": [
+        {
+          "id": "first-steps-21",
+          "source": "first-steps.md",
+          "text": "Deploy your app to **[FastAPI Cloud](https://fastapicloud.com)** with one command: `fastapi deploy`. \ud83c\udf89  \n#### About FastAPI Cloud { #about-fastapi-cloud }  \n**[FastAPI Cloud](https://fastapicloud.com)** is built by the same author and team behind **FastAPI**.  \nIt streamlines the process of **building**, **deploying**, and **accessing** an API with minimal effort.  \nIt brings the same **developer experience** of building apps with FastAPI to **deploying** them to the cloud. \ud83c\udf89  \nFastAPI Cloud is the primary sponsor and funding provider for the *FastAPI and friends* open source projects. \u2728  \n#### Deploy to other cloud providers { #deploy-to-other-cloud-providers }  \nFastAPI is open source and based on standards. You can deploy FastAPI apps to any cloud provider you choose.  \nFollow your cloud provider's guides to deploy FastAPI apps with them. \ud83e\udd13"
+        },
+        {
+          "id": "first-steps-13",
+          "source": "first-steps.md",
+          "text": "You can optionally deploy your FastAPI app to [FastAPI Cloud](https://fastapicloud.com) with a single command. \ud83d\ude80  \n<div class=\"termy\">  \n```console\n$ uv run fastapi deploy\n\nDeploying to FastAPI Cloud...\n\n\u2705 Deployment successful!\n\n\ud83d\udc14 Ready the chicken! Your app is ready at https://myapp.fastapicloud.dev\n```  \n</div>  \nThe CLI will automatically detect your FastAPI application and deploy it to the cloud. If you are not logged in, your browser will open to complete the authentication process.  \nThat's it! Now you can access your app at that URL. \u2728"
+        },
+        {
+          "id": "first-steps-22",
+          "source": "first-steps.md",
+          "text": "* Import `FastAPI`.\n* Create an `app` instance.\n* Write a **path operation decorator** using decorators like `@app.get(\"/\")`.\n* Define a **path operation function**; for example, `def root(): ...`.\n* Run the development server using the command `fastapi dev`.\n* Optionally deploy your app with `fastapi deploy`."
+        }
+      ]
+    },
+    {
+      "id": "q28",
+      "question": "How do I add rate limiting so a client can only make 100 requests per minute?",
+      "answerable": false,
+      "answer": "I don't know.",
+      "chunks": [
+        {
+          "id": "request-forms-5",
+          "source": "request-forms.md",
+          "text": "This is not a limitation of **FastAPI**, it's part of the HTTP protocol.  \n///"
+        },
+        {
+          "id": "security__simple-oauth2-3",
+          "source": "security/simple-oauth2.md",
+          "text": "Now let's use the utilities provided by **FastAPI** to handle this."
+        },
+        {
+          "id": "security__first-steps-13",
+          "source": "security/first-steps.md",
+          "text": "So, in just 3 or 4 extra lines, you already have some primitive form of security."
+        }
+      ]
+    },
+    {
+      "id": "q29",
+      "question": "How do I set the maximum allowed size for an uploaded file?",
+      "answerable": false,
+      "answer": "I don't know.",
+      "chunks": [
+        {
+          "id": "request-files-3",
+          "source": "request-files.md",
+          "text": "Define a file parameter with a type of `UploadFile`:  \nUsing `UploadFile` has several advantages over `bytes`:  \n* You don't have to use `File()` in the default value of the parameter.\n* It uses a \"spooled\" file:\n* A file stored in memory up to a maximum size limit, and after passing this limit it will be stored on disk.\n* This means that it will work well for large files like images, videos, large binaries, etc. without consuming all the memory.\n* You can get metadata from the uploaded file.\n* It has a [file-like](https://docs.python.org/3/glossary.html#term-file-like-object) `async` interface.\n* It exposes an actual Python [`SpooledTemporaryFile`](https://docs.python.org/3/library/tempfile.html#tempfile.SpooledTemporaryFile) object that you can pass directly to other libraries that expect a file-like object."
+        },
+        {
+          "id": "request-files-12",
+          "source": "request-files.md",
+          "text": "And the same way as before, you can use `File()` to set additional parameters, even for `UploadFile`:"
+        },
+        {
+          "id": "request-files-0",
+          "source": "request-files.md",
+          "text": "You can define files to be uploaded by the client using `File`.  \n/// note  \nTo receive uploaded files, first install [`python-multipart`](https://github.com/Kludex/python-multipart).  \nAdd it to your project:  \n```console\n$ uv add python-multipart\n```  \nThis is because uploaded files are sent as \"form data\".  \n///"
+        }
+      ]
+    },
+    {
+      "id": "q30",
+      "question": "How many Uvicorn or Gunicorn worker processes should I run in production?",
+      "answerable": false,
+      "answer": "I don't know.",
+      "chunks": [
+        {
+          "id": "debugging-1",
+          "source": "debugging.md",
+          "text": "In your FastAPI application, import and run `uvicorn` directly:"
+        },
+        {
+          "id": "background-tasks-6",
+          "source": "background-tasks.md",
+          "text": "If you need to perform heavy background computation and you don't necessarily need it to be run by the same process (for example, you don't need to share memory, variables, etc), you might benefit from using other bigger tools like [Celery](https://docs.celeryq.dev).  \nThey tend to require more complex configurations, a message/job queue manager, like RabbitMQ or Redis, but they allow you to run background tasks in multiple processes, and especially, in multiple servers.  \nBut if you need to access variables and objects from the same **FastAPI** app, or you need to perform small background tasks (like sending an email notification), you can simply just use `BackgroundTasks`."
+        },
+        {
+          "id": "schema-extra-example-18",
+          "source": "schema-extra-example.md",
+          "text": "I used to say I didn't like history that much... and look at me now giving \"tech history\" lessons. \ud83d\ude05  \nIn short, **upgrade to FastAPI 0.99.0 or above**, and things are much **simpler, consistent, and intuitive**, and you don't have to know all these historic details. \ud83d\ude0e"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,333 @@
+{
+  "judge_model": "gemini-3.8-flash",
+  "verdicts": [
+    {
+      "id": "q01",
+      "abstained": false,
+      "claims": [
+        "To return a 404 error to the client when an item isn't found, you raise an HTTPException with a status code of 404.",
+        "Because HTTPException is a Python exception, you raise it rather than return it."
+      ],
+      "unsupported": [],
+      "reason": "All claims made in the answer are directly supported by the context, specifically in [handling-errors-2].",
+      "faithful": 1
+    },
+    {
+      "id": "q02",
+      "abstained": false,
+      "claims": [
+        "To customize the response when request data fails validation, you should import RequestValidationError.",
+        "You should use the @app.exception_handler(RequestValidationError) decorator to define/decorate your own exception handler.",
+        "The exception handler will receive the Request and the exception as arguments."
+      ],
+      "unsupported": [],
+      "reason": "All claims are completely supported by section [handling-errors-8] of the context.",
+      "faithful": 1
+    },
+    {
+      "id": "q03",
+      "abstained": false,
+      "claims": [
+        "You set the status code using the status_code parameter in the decorator method (such as @app.get(), @app.post(), etc.) of the path operation.",
+        "For a create endpoint/operation, the status code 201 ('Created') is commonly used."
+      ],
+      "unsupported": [],
+      "reason": "All claims made in the answer are directly supported by the context provided.",
+      "faithful": 1
+    },
+    {
+      "id": "q04",
+      "abstained": false,
+      "claims": [
+        "Path operations are evaluated in order, so the path for '/users/me' must be declared before the path for '/users/{user_id}'."
+      ],
+      "unsupported": [],
+      "reason": "The answer is directly quoted from the context [path-params-8].",
+      "faithful": 1
+    },
+    {
+      "id": "q05",
+      "abstained": false,
+      "claims": [
+        "You can use a standard Python Enum to restrict a path parameter to a fixed set of allowed values."
+      ],
+      "unsupported": [],
+      "reason": "The claim is fully supported by the context, which states that if you want the possible valid path parameter values to be predefined, you can use a standard Python Enum.",
+      "faithful": 1
+    },
+    {
+      "id": "q06",
+      "abstained": false,
+      "claims": [
+        "You can declare a path parameter containing a path by using an option from Starlette in the path declaration like `/files/{file_path:path}`.",
+        "In this case, the name of the parameter is `file_path`.",
+        "The `:path` part tells it that the parameter should match any path."
+      ],
+      "unsupported": [],
+      "reason": "All claims made in the answer are directly and accurately supported by context snippet [path-params-16].",
+      "faithful": 1
+    },
+    {
+      "id": "q07",
+      "abstained": false,
+      "claims": [
+        "To limit a query string parameter to at most 50 characters, use Annotated with Query inside it.",
+        "Set the max_length parameter to 50 inside Query.",
+        "An example is Annotated[str, Query(max_length=50)]."
+      ],
+      "unsupported": [],
+      "reason": "All claims are supported by the context, which specifies using Query inside of Annotated with the parameter max_length set to 50 to enforce a maximum length of 50 characters.",
+      "faithful": 1
+    },
+    {
+      "id": "q08",
+      "abstained": false,
+      "claims": [
+        "You can declare an alias.",
+        "That alias is what will be used to find the parameter value."
+      ],
+      "unsupported": [],
+      "reason": "The entire answer is directly supported by the context passage [query-params-str-validations-18], which states: 'Then you can declare an alias, and that alias is what will be used to find the parameter value'.",
+      "faithful": 1
+    },
+    {
+      "id": "q09",
+      "abstained": false,
+      "claims": [
+        "You can require item_id to be at least 1 by using Path with ge=1."
+      ],
+      "unsupported": [],
+      "reason": "The context states that with Path and ge=1, item_id will need to be greater than or equal to 1, which directly supports the answer.",
+      "faithful": 1
+    },
+    {
+      "id": "q10",
+      "abstained": false,
+      "claims": [
+        "FastAPI converts underscores to hyphens because most standard HTTP headers are separated by a hyphen, but variables with hyphens are invalid in Python.",
+        "By converting underscores to hyphens, you can use standard Python snake_case for your variables while FastAPI handles the extraction and documentation of the headers.",
+        "To disable this automatic conversion, you can set the convert_underscores parameter of Header to False.",
+        "If you are using Pydantic models for header parameters, you can also disable the automatic conversion there.",
+        "Before setting convert_underscores to False, bear in mind that some HTTP proxies and servers disallow the usage of headers with underscores."
+      ],
+      "unsupported": [],
+      "reason": "All claims made in the answer are directly and fully supported by the provided context.",
+      "faithful": 1
+    },
+    {
+      "id": "q11",
+      "abstained": false,
+      "claims": [
+        "Using UploadFile has several advantages over bytes.",
+        "With UploadFile, you do not have to use File() in the default value of the parameter.",
+        "UploadFile uses a 'spooled' file.",
+        "A spooled file is stored in memory up to a maximum size limit, and after passing this limit it will be stored on disk.",
+        "This means it will work well for large files like images, videos, large binaries, etc. without consuming all the memory.",
+        "You can get metadata from the uploaded file with UploadFile.",
+        "UploadFile has a file-like async interface.",
+        "UploadFile exposes an actual Python SpooledTemporaryFile object that can be passed directly to other libraries expecting a file-like object."
+      ],
+      "unsupported": [],
+      "reason": "All claims in the answer are directly stated and supported by the context provided in [request-files-3].",
+      "faithful": 1
+    },
+    {
+      "id": "q12",
+      "abstained": false,
+      "claims": [
+        "To have a single Pydantic body parameter nested under a key, you can use the special Body parameter embed=True.",
+        "The syntax to embed the parameter is item: Annotated[Item, Body(embed=True)]."
+      ],
+      "unsupported": [],
+      "reason": "All claims are directly supported by the context in [body-multiple-params-6], which explains using the special Body parameter embed=True to embed a single Pydantic model under a key and provides the exact code snippet.",
+      "faithful": 1
+    },
+    {
+      "id": "q22",
+      "abstained": true
+    },
+    {
+      "id": "q26",
+      "abstained": true
+    },
+    {
+      "id": "q27",
+      "abstained": true
+    },
+    {
+      "id": "q28",
+      "abstained": true
+    },
+    {
+      "id": "q29",
+      "abstained": true
+    },
+    {
+      "id": "q30",
+      "abstained": true
+    },
+    {
+      "id": "q13",
+      "abstained": false,
+      "claims": [
+        "To implement partial updates without overwriting unsent fields with defaults, you can optionally use PATCH instead of PUT.",
+        "Retrieve the stored data.",
+        "Put that stored data in a Pydantic model.",
+        "Generate a dict without default values from the input model using exclude_unset=True (e.g., item.model_dump(exclude_unset=True)) so only data set by the user is used.",
+        "Create a copy of the stored model, updating its attributes with the received partial updates (using the update parameter).",
+        "Convert the copied model to something that can be stored in the DB (for example, using jsonable_encoder).",
+        "Save the data to your DB.",
+        "Return the updated model."
+      ],
+      "unsupported": [],
+      "reason": "All claims directly reflect the steps and recommendations explicitly outlined in the context.",
+      "faithful": 1
+    },
+    {
+      "id": "q14",
+      "abstained": false,
+      "claims": [
+        "You can use the jsonable_encoder() function provided by FastAPI.",
+        "It receives an object, such as a Pydantic model.",
+        "It returns a JSON-compatible version (a Python standard data structure like a dict).",
+        "It converts the Pydantic model to a dict.",
+        "It converts a datetime object to a str."
+      ],
+      "unsupported": [],
+      "reason": "All claims made in the answer are directly supported by the context snippets [encoder-0], [encoder-1], and [encoder-2].",
+      "faithful": 1
+    },
+    {
+      "id": "q15",
+      "abstained": false,
+      "claims": [
+        "You can define background tasks to be run after returning a response.",
+        "Inside of your path operation function, pass your task function to the background tasks object with the method .add_task().",
+        ".add_task() receives as arguments a task function to be run in the background.",
+        ".add_task() receives as arguments any sequence of arguments that should be passed to the task function in order.",
+        ".add_task() receives as arguments any keyword arguments that should be passed to the task function."
+      ],
+      "unsupported": [],
+      "reason": "All statements made in the answer are directly stated and supported by the context snippets [background-tasks-0] and [background-tasks-3].",
+      "faithful": 1
+    },
+    {
+      "id": "q16",
+      "abstained": false,
+      "claims": [
+        "The default for allow_methods is ['GET'].",
+        "The default for max_age is 600."
+      ],
+      "unsupported": [],
+      "reason": "Both claims are explicitly supported by the context: [cors-5] specifies that allow_methods 'Defaults to [\\'GET\\']' and [cors-6] specifies that max_age 'Defaults to 600'.",
+      "faithful": 1
+    },
+    {
+      "id": "q17",
+      "abstained": false,
+      "claims": [
+        "You can add a custom header X-Process-Time containing the time in seconds that it took to process the request and generate a response.",
+        "This can be done by adding code to run with the request before any path operation receives it, and after the response is generated, before returning it.",
+        "It is recommended to use time.perf_counter() for this."
+      ],
+      "unsupported": [],
+      "reason": "All claims made in the answer are directly supported by the context in [middleware-3].",
+      "faithful": 1
+    },
+    {
+      "id": "q18",
+      "abstained": false,
+      "claims": [
+        "To open a database session in a dependency and ensure it is closed after the request, you create a dependency with yield.",
+        "The code prior to the yield statement creates the session.",
+        "The code following the yield statement is executed after the response to close it.",
+        "By default, dependencies with yield execute their exit code after the response is sent to the client (using the 'request' scope).",
+        "Using a dependency with yield ensures that a single session is used per request."
+      ],
+      "unsupported": [],
+      "reason": "All claims are directly supported by the context documents, which describe creating a database session with yield, executing the code after yield to close it following the response, the default exit behavior corresponding to the request scope, and how this setup guarantees a single session per request.",
+      "faithful": 1
+    },
+    {
+      "id": "q19",
+      "abstained": false,
+      "claims": [
+        "FastAPI will call the sub-dependency only once per request.",
+        "FastAPI saves the returned value in a 'cache' to pass to all dependants.",
+        "To force the dependency to be called at every step (possibly multiple times) in the same request, you can set the parameter use_cache=False when using Depends."
+      ],
+      "unsupported": [],
+      "reason": "All claims in the answer are directly supported by the context in [dependencies__sub-dependencies-4].",
+      "faithful": 1
+    },
+    {
+      "id": "q20",
+      "abstained": false,
+      "claims": [
+        "To give all routes in one module a shared `/items` prefix and tag, you can add them to the `APIRouter`.",
+        "When defining the `APIRouter`, you can include the `prefix` and `tags` parameters (e.g., `router = APIRouter(prefix=\"/items\", tags=[\"items\"])`).",
+        "The path of each path operation must start with `/` (e.g., `@router.get(\"/{item_id}\")`).",
+        "The `prefix` must not include a final `/`.",
+        "Adding these to the router will apply the prefix and tags to all path operations included in that router."
+      ],
+      "unsupported": [],
+      "reason": "All claims made in the answer are directly supported by the context snippets from bigger-applications-8 and bigger-applications-9.",
+      "faithful": 1
+    },
+    {
+      "id": "q21",
+      "abstained": false,
+      "claims": [
+        "To write tests for your FastAPI app, you use TestClient.",
+        "TestClient is based on httpx.",
+        "You create a TestClient by passing your FastAPI application to it.",
+        "You create functions with names starting with test_ (a pytest convention).",
+        "You use standard Python assert statements.",
+        "The testing functions do not need to be async def; they should be normal def.",
+        "Calls to the client should be normal calls without await.",
+        "This allows you to use pytest directly."
+      ],
+      "unsupported": [],
+      "reason": "All claims in the answer are directly supported by the context.",
+      "faithful": 1
+    },
+    {
+      "id": "q23",
+      "abstained": false,
+      "claims": [
+        "In the OAuth2 password flow, the client (the frontend running in the user's browser) sends the username and password to a specific URL in the API to get a token.",
+        "The tokenUrl parameter contains the URL that the client will use to send those credentials.",
+        "The tokenUrl parameter does not create the endpoint itself, but declares which URL the client should use.",
+        "This URL information is used in OpenAPI and interactive API documentation systems.",
+        "The tokenUrl parameter is a relative URL (e.g., token is equivalent to ./token).",
+        "Using a relative URL ensures the application continues to work even when behind a proxy."
+      ],
+      "unsupported": [],
+      "reason": "All claims in the answer are directly supported by the provided context snippets.",
+      "faithful": 1
+    },
+    {
+      "id": "q24",
+      "abstained": false,
+      "claims": [
+        "You can stream data to the client using Server-Sent Events (SSE).",
+        "Server-Sent Events (SSE) uses the text/event-stream format.",
+        "The text/event-stream format is supported natively by browsers with the EventSource API."
+      ],
+      "unsupported": [],
+      "reason": "All claims are directly supported by the context provided in [server-sent-events-0].",
+      "faithful": 1
+    },
+    {
+      "id": "q25",
+      "abstained": false,
+      "claims": [
+        "You can use Pydantic's model configuration to forbid any extra fields.",
+        "If a client tries to send extra data in the query parameters, they will receive an error response."
+      ],
+      "unsupported": [],
+      "reason": "All claims are directly quoted and supported by the text in chunk [query-param-models-3].",
+      "faithful": 1
+    }
+  ]
+}
