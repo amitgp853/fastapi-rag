@@ -53,45 +53,47 @@ def judge(context, answer):
 def save(results):
     OUT_FILE.write_text(json.dumps({"judge_model": JUDGE_MODEL, "verdicts": results}, indent=2))
 
-answers = json.loads(ANSWERS_FILE.read_text())["answers"]
-results = json.loads(OUT_FILE.read_text())["verdicts"] if OUT_FILE.exists() else []
-done = {r["id"] for r in results}
-failed = []
 
-for a in answers:
-    if a["id"] in done:
-        continue
-    if is_idk(a["answer"]):
-        results.append({"id": a["id"], "abstained": True})
+if __name__ == "__main__":
+    answers = json.loads(ANSWERS_FILE.read_text())["answers"]
+    results = json.loads(OUT_FILE.read_text())["verdicts"] if OUT_FILE.exists() else []
+    done = {r["id"] for r in results}
+    failed = []
+
+    for a in answers:
+        if a["id"] in done:
+            continue
+        if is_idk(a["answer"]):
+            results.append({"id": a["id"], "abstained": True})
+            save(results)
+            continue
+
+        context = "\n\n".join(f"[{c['id']}]\n{c['text']}" for c in a["chunks"])
+
+        try:
+            verdict = judge(context, a["answer"])
+        except errors.APIError as e:
+            print(f"{a['id']}: FAILED ({e.code}): {e.message}")
+            failed.append(a["id"])
+            continue
+        
+        if verdict is None or verdict.faithful not in (0, 1):
+            print(f"{a['id']}: FAILED (judge output invalid)")
+            failed.append(a["id"])
+            if e.code == 429:
+                print("Quota exhausted. Stopping; rerun later to resume.")
+                break
+            continue
+
+        results.append({"id": a["id"],  "abstained": False, **verdict.model_dump()})
         save(results)
-        continue
+        print(f"{a['id']}: faithful={verdict.faithful} {verdict.reason[:90]}")
+        time.sleep(4)
 
-    context = "\n\n".join(f"[{c['id']}]\n{c['text']}" for c in a["chunks"])
-
-    try:
-        verdict = judge(context, a["answer"])
-    except errors.APIError as e:
-        print(f"{a['id']}: FAILED ({e.code}): {e.message}")
-        failed.append(a["id"])
-        continue
-    
-    if verdict is None or verdict.faithful not in (0, 1):
-        print(f"{a['id']}: FAILED (judge output invalid)")
-        failed.append(a["id"])
-        if e.code == 429:
-            print("Quota exhausted. Stopping; rerun later to resume.")
-            break
-        continue
-
-    results.append({"id": a["id"],  "abstained": False, **verdict.model_dump()})
-    save(results)
-    print(f"{a['id']}: faithful={verdict.faithful} {verdict.reason[:90]}")
-    time.sleep(4)
-
-judged = [r for r in results if not r["abstained"]]
-if not judged:
-    print("Nothing judged. Check the failures above.")
-else:
-    score = sum(r["faithful"] for r in judged)/len(judged)
-    print(f"\nfaithfulness = {score:.3f}  ({len(judged)} judged, {len(results) - len(judged)} abstained)")
-print(f"Failed: {failed or 'none'}")
+    judged = [r for r in results if not r["abstained"]]
+    if not judged:
+        print("Nothing judged. Check the failures above.")
+    else:
+        score = sum(r["faithful"] for r in judged)/len(judged)
+        print(f"\nfaithfulness = {score:.3f}  ({len(judged)} judged, {len(results) - len(judged)} abstained)")
+    print(f"Failed: {failed or 'none'}")

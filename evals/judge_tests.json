@@ -1,0 +1,102 @@
+[
+  {
+    "id": "t1",
+    "from": "q16",
+    "case": "wrong value",
+    "expected": 0,
+    "question": "What are the defaults of CORSMiddleware for allowed methods and max_age?",
+    "answer": "The default for `allow_methods` is `['GET']`. The default for `max_age` is `3600`.",
+    "chunks": [
+      {
+        "id": "cors-6",
+        "source": "cors.md",
+        "text": "* `allow_credentials` - Indicate that cookies should be supported for cross-origin requests. Defaults to `False`.  \nNone of `allow_origins`, `allow_methods` and `allow_headers` can be set to `['*']` if `allow_credentials` is set to `True`. All of them must be [explicitly specified](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#credentialed_requests_and_wildcards).  \n* `expose_headers` - Indicate any response headers that should be made accessible to the browser. Defaults to `[]`.\n* `max_age` - Sets a maximum time in seconds for browsers to cache CORS responses. Defaults to `600`.  \nThe middleware responds to two particular types of HTTP request..."
+      },
+      {
+        "id": "cors-5",
+        "source": "cors.md",
+        "text": "* `allow_origin_regex` - A regex string to match against origins that should be permitted to make cross-origin requests. e.g. `'https://.*\\.example\\.org'`.\n* `allow_methods` - A list of HTTP methods that should be allowed for cross-origin requests. Defaults to `['GET']`. You can use `['*']` to allow all standard methods.\n* `allow_headers` - A list of HTTP request headers that should be supported for cross-origin requests. Defaults to `[]`. You can use `['*']` to allow all headers. The `Accept`, `Accept-Language`, `Content-Language` and `Content-Type` headers are always allowed for [simple CORS requests](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#simple_requests).\n* `allow_credentials` - Indicate that cookies should be supported for cross-origin requests. Defaults to `False`."
+      },
+      {
+        "id": "cors-4",
+        "source": "cors.md",
+        "text": "You can configure it in your **FastAPI** application using the `CORSMiddleware`.  \n* Import `CORSMiddleware`.\n* Create a list of allowed origins (as strings).\n* Add it as a \"middleware\" to your **FastAPI** application.  \nYou can also specify whether your backend allows:  \n* Credentials (Authorization headers, Cookies, etc).\n* Specific HTTP methods (`POST`, `PUT`) or all of them with the wildcard `\"*\"`.\n* Specific HTTP headers or all of them with the wildcard `\"*\"`.  \nThe default parameters used by the `CORSMiddleware` implementation are restrictive by default, so you'll need to explicitly enable particular origins, methods, or headers, in order for browsers to be permitted to use them in a Cross-Domain context.  \nThe following arguments are supported:  \n* `allow_origins` - A list of origins that should be permitted to make cross-origin requests. E.g. `['https://example.org', 'https://www.example.org']`. You can use `['*']` to allow any origin."
+      }
+    ]
+  },
+  {
+    "id": "t2",
+    "from": "q01",
+    "case": "added claim",
+    "expected": 0,
+    "question": "How do I return a 404 error to the client when an item isn't found?",
+    "answer": "To return a 404 error to the client when an item isn't found, you raise an `HTTPException` with a status code of 404. Because it is a Python exception, you `raise` it rather than `return` it. You can also return a `JSONResponse` with status 404 instead.",
+    "chunks": [
+      {
+        "id": "handling-errors-3",
+        "source": "handling-errors.md",
+        "text": "If the client requests `http://example.com/items/foo` (an `item_id` `\"foo\"`), that client will receive an HTTP status code of 200, and a JSON response of:  \n```JSON\n{\n\"item\": \"The Foo Wrestlers\"\n}\n```  \nBut if the client requests `http://example.com/items/bar` (a non-existent `item_id` `\"bar\"`), that client will receive an HTTP status code of 404 (the \"not found\" error), and a JSON response of:  \n```JSON\n{\n\"detail\": \"Item not found\"\n}\n```  \n/// tip  \nWhen raising an `HTTPException`, you can pass any value that can be converted to JSON as the parameter `detail`, not only `str`.  \nYou could pass a `dict`, a `list`, etc.  \nThey are handled automatically by **FastAPI** and converted to JSON.  \n///"
+      },
+      {
+        "id": "handling-errors-0",
+        "source": "handling-errors.md",
+        "text": "There are many situations in which you need to report an error to a client that is using your API.  \nThis client could be a browser with a frontend, a code from someone else, an IoT device, etc.  \nYou could need to tell the client that:  \n* The client doesn't have enough privileges for that operation.\n* The client doesn't have access to that resource.\n* The item the client was trying to access doesn't exist.\n* etc.  \nIn these cases, you would normally return an **HTTP status code** in the range of **400** (from 400 to 499).  \nThis is similar to the 200 HTTP status codes (from 200 to 299). Those \"200\" status codes mean that somehow there was a \"success\" in the request.  \nThe status codes in the 400 range mean that there was an error from the client.  \nRemember all those **\"404 Not Found\"** errors (and jokes)?"
+      },
+      {
+        "id": "handling-errors-2",
+        "source": "handling-errors.md",
+        "text": "`HTTPException` is a normal Python exception with additional data relevant for APIs.  \nBecause it's a Python exception, you don't `return` it, you `raise` it.  \nThis also means that if you are inside a utility function that you are calling inside of your *path operation function*, and you raise the `HTTPException` from inside of that utility function, it won't run the rest of the code in the *path operation function*, it will terminate that request right away and send the HTTP error from the `HTTPException` to the client.  \nThe benefit of raising an exception over returning a value will be more evident in the section about Dependencies and Security.  \nIn this example, when the client requests an item by an ID that doesn't exist, raise an exception with a status code of `404`:"
+      }
+    ]
+  },
+  {
+    "id": "t3",
+    "from": "q21",
+    "case": "true but not in context",
+    "expected": 0,
+    "question": "How do I write tests for my FastAPI app, and do the test functions need to be async?",
+    "answer": "To write tests for your FastAPI app, you use `TestClient`, which is based on `httpx`. You create a `TestClient` by passing your FastAPI application to it, create functions with names starting with `test_` (a `pytest` convention), and use standard Python `assert` statements.\n\nThe testing functions do not need to be `async def`; they should be normal `def`, and calls to the client should be normal calls without `await`. This allows you to use `pytest` directly. If you need async tests, use the `pytest-asyncio` plugin.",
+    "chunks": [
+      {
+        "id": "testing-1",
+        "source": "testing.md",
+        "text": "/// note  \nTo use `TestClient`, first install [`httpx`](https://www.python-httpx.org).  \nAdd it to your project:  \n```console\n$ uv add httpx\n```  \n///  \nImport `TestClient`.  \nCreate a `TestClient` by passing your **FastAPI** application to it.  \nCreate functions with a name that starts with `test_` (this is a standard `pytest` convention).  \nUse the `TestClient` object the same way as you do with `httpx`.  \nWrite simple `assert` statements with the standard Python expressions that you need to check (again, standard `pytest`).  \n/// tip  \nNotice that the testing functions are normal `def`, not `async def`.  \nAnd the calls to the client are also normal calls, not using `await`.  \nThis allows you to use `pytest` directly without complications.  \n///  \n/// note | Technical Details  \nYou could also use `from starlette.testclient import TestClient`."
+      },
+      {
+        "id": "testing-0",
+        "source": "testing.md",
+        "text": "Thanks to [Starlette](https://starlette.dev/testclient/), testing **FastAPI** applications is easy and enjoyable.  \nIt is based on [HTTPX](https://www.python-httpx.org), which in turn is designed based on Requests, so it's very familiar and intuitive.  \nWith it, you can use [pytest](https://docs.pytest.org/) directly with **FastAPI**."
+      },
+      {
+        "id": "testing-3",
+        "source": "testing.md",
+        "text": "In a real application, you probably would have your tests in a different file.  \nAnd your **FastAPI** application might also be composed of several files/modules, etc."
+      }
+    ]
+  },
+  {
+    "id": "t4",
+    "from": "q05",
+    "case": "paraphrase only",
+    "expected": 1,
+    "question": "How can I restrict a path parameter to a fixed set of allowed values?",
+    "answer": "To limit a path parameter to a fixed list of allowed values, use a standard Python `Enum`.",
+    "chunks": [
+      {
+        "id": "path-params-9",
+        "source": "path-params.md",
+        "text": "If you have a *path operation* that receives a *path parameter*, but you want the possible valid *path parameter* values to be predefined, you can use a standard Python <abbr title=\"Enumeration\">`Enum`</abbr>."
+      },
+      {
+        "id": "path-params-11",
+        "source": "path-params.md",
+        "text": "Then create a *path parameter* with a type annotation using the enum class you created (`ModelName`):"
+      },
+      {
+        "id": "path-params-12",
+        "source": "path-params.md",
+        "text": "Because the available values for the *path parameter* are predefined, the interactive docs can show them nicely:  \n<img src=\"/img/tutorial/path-params/image03.png\">"
+      }
+    ]
+  }
+]
